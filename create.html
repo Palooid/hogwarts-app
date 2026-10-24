@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Опубликовать книгу</title>
+    <style>
+      :root {
+        --bg: #f6f1e7;
+        --card: #fffdf8;
+        --accent: #7a1f2b;
+        --text: #1f1d1a;
+        --muted: #5f5a54;
+        --border: #e3dccd;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .container {
+        width: min(900px, calc(100% - 32px));
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 12px 28px rgba(35, 18, 11, 0.08);
+        padding: 32px;
+      }
+
+      h1 {
+        margin: 0 0 24px;
+        color: var(--accent);
+        font-size: clamp(2rem, 3vw, 2.6rem);
+      }
+
+      form {
+        display: grid;
+        gap: 18px;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      input,
+      textarea,
+      button {
+        font: inherit;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--text);
+        padding: 12px 14px;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: 2px solid rgba(122, 31, 43, 0.15);
+        border-color: var(--accent);
+      }
+
+      textarea {
+        min-height: 220px;
+        resize: vertical;
+      }
+
+      .submit-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: 0;
+        border-radius: 10px;
+        background: var(--accent);
+        color: white;
+        padding: 12px 22px;
+        cursor: pointer;
+        font-weight: 700;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+
+      button:hover {
+        opacity: 0.96;
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        opacity: 0.7;
+        cursor: wait;
+      }
+
+      .status {
+        min-height: 22px;
+        color: var(--muted);
+        font-size: 0.96rem;
+      }
+
+      .status.success {
+        color: #0f7a4a;
+      }
+
+      .status.error {
+        color: #b42318;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Опубликовать книгу</h1>
+
+      <form id="bookForm">
+        <div class="field">
+          <label for="title">Название</label>
+          <input id="title" name="title" type="text" placeholder="Например: Гарри Поттер и философский камень" required />
+        </div>
+
+        <div class="field">
+          <label for="author">Автор</label>
+          <input id="author" name="author" type="text" placeholder="Имя автора" required />
+        </div>
+
+        <div class="field">
+          <label for="text">Текст</label>
+          <textarea id="text" name="text" placeholder="Введите текст книги..." required></textarea>
+        </div>
+
+        <div class="submit-wrap">
+          <button type="submit" id="submitBtn">Опубликовать</button>
+          <div id="status" class="status" aria-live="polite"></div>
+        </div>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      // ЗАМЕНИТЕ ЭТИ ЗНАЧЕНИЯ НА СВОИ ИЗ Supabase Dashboard
+      const supabaseUrl = 'https://YOUR_PROJECT_ID.supabase.co';
+      const supabaseKey = 'YOUR_ANON_OR_SERVICE_ROLE_KEY';
+
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const form = document.getElementById('bookForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const statusNode = document.getElementById('status');
+
+      function setStatus(message, type = '') {
+        statusNode.textContent = message;
+        statusNode.className = 'status';
+        if (type) statusNode.classList.add(type);
+      }
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const title = document.getElementById('title').value.trim();
+        const author = document.getElementById('author').value.trim();
+        const text = document.getElementById('text').value.trim();
+
+        if (!title || !author || !text) {
+          setStatus('Пожалуйста, заполните все поля.', 'error');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        setStatus('Сохраняем книгу в Supabase...');
+
+        try {
+          const { data, error } = await supabase
+            .from('books')
+            .insert([
+              {
+                title,
+                author,
+                content: text,
+                created_at: new Date().toISOString()
+              }
+            ]);
+
+          if (error) {
+            throw error;
+          }
+
+          setStatus('Книга успешно сохранена!', 'success');
+          form.reset();
+        } catch (err) {
+          console.error(err);
+          setStatus('Ошибка при сохранении: ' + (err.message || 'Неизвестная ошибка'), 'error');
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
