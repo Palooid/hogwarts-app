@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hogwarts Reader & Editor</title>
+<meta name="description" content="Читалка и редактор текстов с GitHub-интеграцией">
+<meta name="theme-color" content="#7a1f2b">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=BFiC8U5lVzV4jcyuFImTNgFe4JaVx0BNYyFejxKniFxByyXxxg4rthK66bBoDtNzxT9G42h80dcfmSLQOVMXCKXzGGiquH9ALSMrL0NYUoW85eMwwj7j3vuVAsfm5bLoZal2G7IU854TwSUWNZrYgUY7Nw0MXuhGYro8iMkMfzvNRNWCuyJoOHmy2G02D2TxYybXP0dspDzAZ-7IgHmlmbQ2wfh3T9kcMlZ9cnlEEvg" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jbG91ZC5pc2tyYWJvdC5ydS9hcGkvZmlsZS83NDFmNjU2Ny00OTA3LTRiMGItYjRhOS0yNTAwN2YxYTgwZTQvaG9nd2FydHMtYXBwL2luZGV4Lmh0bWw_cHJvZmlsZV9jdHg9MTFlNTJiMjItM2NjNy00NzdhLWI5YWYtY2I0MzBlMGNlYTY0JmRvd25sb2FkPXRydWU"/><style>
+:root{--bg:#f6f1e7;--fg:#22201c;--muted:#6b665c;--card:#fffdf8;--accent:#7a1f2b;--line:#e4dccd;--link:#7a1f2b;--shadow:rgba(0,0,0,.08);--hi:#ffe08a;--panel:#fffdf8;--toolbar-bg:#2c2c2c;--toolbar-fg:#fff;--border:#d0d0d0}
+[data-theme="dark"]{--bg:#16151a;--fg:#d9d5cf;--muted:#8d887f;--card:#1e1d23;--accent:#e0a96d;--line:#2c2b33;--link:#e0a96d;--shadow:rgba(0,0,0,.5);--hi:#5a4a17;--panel:#1e1d23;--toolbar-bg:#0d0d0d;--toolbar-fg:#e0e0e0;--border:#3a3a3a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.7;font-size:18px;transition:background .3s,color .3s}
+button{font-family:system-ui,sans-serif;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:8px 16px;border-radius:8px;transition:all .2s}
+button:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+input,textarea,select{font-family:system-ui,sans-serif;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.hidden{display:none!important}
+
+/* Main navigation */
+.main-nav{position:fixed;top:0;left:0;right:0;height:56px;background:var(--toolbar-bg);color:var(--toolbar-fg);display:flex;align-items:center;padding:0 20px;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.main-nav .logo{font-size:1.3em;font-weight:600;margin-right:30px;display:flex;align-items:center;gap:8px}
+.main-nav .tabs{display:flex;gap:4px;flex:1}
+.main-nav .tab{padding:8px 18px;border-radius:6px;background:transparent;color:var(--toolbar-fg);border:none;font-size:.95em;opacity:.7;transition:all .2s}
+.main-nav .tab:hover{opacity:1;background:rgba(255,255,255,.1)}
+.main-nav .tab.active{opacity:1;background:var(--accent);color:#fff}
+.main-nav .actions{display:flex;gap:8px;align-items:center}
+.main-nav .icon-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--toolbar-fg);font-size:1.2em}
+.main-nav .icon-btn:hover{background:rgba(255,255,255,.15)}
+
+/* Views */
+.view{margin-top:56px;min-height:calc(100vh - 56px)}
+
+/* Library view */
+.library{max-width:1200px;margin:0 auto;padding:40px 20px}
+.library-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:16px}
+.library-header h1{font-size:2em;color:var(--accent)}
+.library-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn-primary{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important;font-weight:600}
+.btn-primary:hover{opacity:.9}
+.books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
+.book-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:0 2px 8px var(--shadow);transition:transform .2s,box-shadow .2s;cursor:pointer}
+.book-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px var(--shadow)}
+.book-card h3{font-size:1.2em;margin-bottom:8px;color:var(--accent)}
+.book-card .meta{color:var(--muted);font-size:.85em;margin-bottom:12px}
+.book-card .desc{font-size:.9em;line-height:1.5;margin-bottom:16px}
+.book-card .actions{display:flex;gap:8px}
+.book-card .actions button{flex:1;padding:6px 12px;font-size:.85em}
+.empty-state{text-align:center;padding:80px 20px;color:var(--muted)}
+.empty-state .icon{font-size:4em;margin-bottom:20px;opacity:.3}
+
+/* Reader view */
+.reader{max-width:760px;margin:0 auto;padding:40px 20px 100px}
+.reader-header{text-align:center;padding:40px 0;border-bottom:1px solid var(--line);margin-bottom:30px}
+.reader-header h1{font-size:2.2em;color:var(--accent);margin-bottom:8px}
+.reader-header .meta{color:var(--muted);font-style:italic}
+.reader-toolbar{position:sticky;top:56px;background:var(--bg);padding:12px;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;z-index:50;margin-bottom:30px}
+.reader-toolbar button{padding:6px 12px;font-size:.85em}
+.reader-content p{text-align:justify;text-indent:1.6em;margin:0 0 .3em;padding:2px 4px;border-radius:4px}
+.reader-content p.reading{background:var(--hi);box-shadow:0 0 0 2px var(--accent) inset}
+.reader-content h2{font-size:1.6em;color:var(--accent);margin:2em 0 .5em;text-align:center}
+.reader-content h2::before{content:"";display:block;width:40px;height:1px;background:var(--accent);margin:0 auto 16px;opacity:.5}
+
+/* Editor view */
+.editor{display:flex;flex-direction:column;height:calc(100vh - 56px)}
+.editor-toolbar{background:var(--card);border-bottom:1px solid var(--line);padding:8px 12px;display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.editor-toolbar .group{display:flex;gap:2px;padding:0 8px;border-right:1px solid var(--line)}
+.editor-toolbar .group:last-child{border-right:none}
+.editor-toolbar button{padding:6px 10px;border-radius:4px;background:transparent;border:1px solid transparent;font-size:.9em;min-width:32px}
+.editor-toolbar button:hover{background:var(--bg);border-color:var(--line)}
+.editor-toolbar button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.editor-toolbar select{padding:4px 8px;font-size:.85em}
+.editor-area{flex:1;overflow:auto;padding:40px;background:var(--bg)}
+.editor-content{max-width:800px;margin:0 auto;min-height:100%;background:var(--card);padding:60px 80px;border-radius:8px;box-shadow:0 2px 12px var(--shadow);outline:none;line-height:1.8;font-size:16px}
+.editor-content:focus{box-shadow:0 4px 20px var(--shadow)}
+.editor-content h1{font-size:2em;margin:1em 0 .5em;color:var(--accent)}
+.editor-content h2{font-size:1.6em;margin:1em 0 .5em;color:var(--accent)}
+.editor-content h3{font-size:1.3em;margin:1em 0 .5em}
+.editor-content p{margin:0 0 1em;text-indent:1.5em}
+.editor-content ul,.editor-content ol{margin:0 0 1em 2em}
+.editor-content blockquote{border-left:4px solid var(--accent);padding-left:20px;margin:1em 0;color:var(--muted);font-style:italic}
+.editor-status{background:var(--card);border-top:1px solid var(--line);padding:8px 16px;font-size:.85em;color:var(--muted);display:flex;justify-content:space-between}
+
+/* Comments panel */
+.comments-panel{position:fixed;right:0;top:56px;bottom:0;width:380px;background:var(--card);border-left:1px solid var(--line);box-shadow:-4px 0 20px var(--shadow);transform:translateX(100%);transition:transform .3s;z-index:90;display:flex;flex-direction:column}
+.comments-panel.open{transform:translateX(0)}
+.comments-header{padding:16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.comments-header h3{font-size:1.1em;color:var(--accent)}
+.comments-list{flex:1;overflow:auto;padding:16px}
+.comment{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
+.comment .meta{font-size:.8em;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}
+.comment .text{font-size:.9em;line-height:1.5}
+.comment-form{padding:16px;border-top:1px solid var(--line)}
+.comment-form textarea{width:100%;min-height:80px;resize:vertical;margin-bottom:8px}
+
+/* Settings modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-content{background:var(--card);border-radius:12px;padding:30px;max-width:500px;width:100%;max-height:90vh;overflow:auto}
+.modal-content h2{color:var(--accent);margin-bottom:20px}
+.modal-content label{display:block;margin-bottom:16px}
+.modal-content label span{display:block;margin-bottom:6px;font-weight:600;font-size:.9em}
+.modal-content input{width:100%}
+.modal-content .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+
+/* TTS player */
+.tts-player{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 20px;box-shadow:0 8px 30px var(--shadow);display:flex;gap:12px;align-items:center;z-index:80;min-width:400px}
+.tts-player button{padding:6px 12px;font-size:.9em}
+.tts-player .info{flex:1;font-size:.85em;color:var(--muted)}
+.tts-player select{font-size:.85em;padding:4px 8px}
+.tts-player input[type=range]{width:100px}
+
+/* Responsive */
+@media(max-width:768px){
+  .main-nav .logo{display:none}
+  .main-nav .tab{padding:8px 12px;font-size:.85em}
+  .library{padding:20px}
+  .books-grid{grid-template-columns:1fr}
+  .reader{padding:20px}
+  .editor-content{padding:30px 20px}
+  .comments-panel{width:100%}
+  .tts-player{min-width:auto;width:calc(100% - 40px);flex-wrap:wrap}
+}
+
+/* Print */
+@media print{
+  .main-nav,.reader-toolbar,.editor-toolbar,.editor-status,.tts-player,.comments-panel{display:none!important}
+  .view{margin-top:0}
+}
+</style>
+</head>
+<body>
+
+<!-- Main Navigation -->
+<nav class="main-nav">
+  <div class="logo">📚 Hogwarts</div>
+  <div class="tabs">
+    <button class="tab active" data-view="library">Библиотека</button>
+    <button class="tab" data-view="reader">Чтение</button>
+    <button class="tab" data-view="editor">Редактор</button>
+  </div>
+  <div class="actions">
+    <button class="icon-btn" onclick="toggleComments()" title="Комментарии">💬</button>
+    <button class="icon-btn" onclick="toggleTheme()" title="Тема">🌓</button>
+    <button class="icon-btn" onclick="openSettings()" title="Настройки">⚙️</button>
+  </div>
+</nav>
+
+<!-- Library View -->
+<div class="view" id="library-view">
+  <div class="library">
+    <div class="library-header">
+      <h1>Моя библиотека</h1>
+      <div class="library-actions">
+        <button class="btn-primary" onclick="importBook()">📥 Импорт книги</button>
+        <button onclick="createNewBook()">✨ Новая книга</button>
+        <button onclick="syncWithGitHub()">🔄 Синхронизация</button>
+      </div>
+    </div>
+    <div class="books-grid" id="books-grid">
+      <div class="empty-state">
+        <div class="icon">📚</div>
+        <h3>Библиотека пуста</h3>
+        <p>Импортируйте книгу или создайте новую</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reader View -->
+<div class="view hidden" id="reader-view">
+  <div class="reader">
+    <div class="reader-header">
+      <h1 id="reader-title">Выберите книгу</h1>
+      <div class="meta" id="reader-meta"></div>
+    </div>
+    <div class="reader-toolbar">
+      <button onclick="readerPrevChapter()">⏮ Назад</button>
+      <button onclick="readerNextChapter()">Вперёд ⏭</button>
+      <button onclick="toggleTTS()">🔊 Озвучка</button>
+      <button onclick="readerGoToTOC()">📖 Оглавление</button>
+      <span id="reader-progress" style="margin-left:auto;color:var(--muted);font-size:.85em"></span>
+    </div>
+    <div class="reader-content" id="reader-content">
+      <p style="text-align:center;color:var(--muted);padding:60px 0">Выберите книгу из библиотеки для чтения</p>
+    </div>
+  </div>
+</div>
+
+<!-- Editor View -->
+<div class="view hidden" id="editor-view">
+  <div class="editor">
+    <div class="editor-toolbar">
+      <div class="group">
+        <select onchange="execCmd('formatBlock',this.value);this.value=''">
+          <option value="">Стиль</option>
+          <option value="h1">Заголовок 1</option>
+          <option value="h2">Заголовок 2</option>
+          <option value="h3">Заголовок 3</option>
+          <option value="p">Обычный текст</option>
+        </select>
+        <select onchange="execCmd('fontName',this.value);this.value=''">
+          <option value="">Шрифт</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Arial">Arial</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+        <select onchange="execCmd('fontSize',this.value);this.value=''">
+          <option value="">Размер</option>
+          <option value="2">Маленький</option>
+          <option value="3">Обычный</option>
+          <option value="4">Средний</option>
+          <option value="5">Большой</option>
+          <option value="6">Огромный</option>
+        </select>
+      </div>
+      <div class="group">
+        <button onclick="execCmd('bold')" title="Жирный (Ctrl+B)"><b>Ж</b></button>
+        <button onclick="execCmd('italic')" title="Курсив (Ctrl+I)"><i>К</i></button>
+        <button onclick="execCmd('underline')" title="Подчёркнутый (Ctrl+U)"><u>П</u></button>
+        <button onclick="execCmd('strikeThrough')" title="Зачёркнутый"><s>З</s></button>
+      </div>
+      <div class="group">
+        <button onclick="execCmd('justifyLeft')" title="По левому краю">⬅</button>
+        <button onclick="execCmd('justifyCenter')" title="По центру">↔</button>
+        <button onclick="execCmd('justifyRight')" title="По правому краю">➡</button>
+        <button onclick="execCmd('justifyFull')" title="По ширине">⇔</button>
+      </div>
+      <div class="group">
+        <button onclick="execCmd('insertUnorderedList')" title="Маркированный список">• Список</button>
+        <button onclick="execCmd('insertOrderedList')" title="Нумерованный список">1. Список</button>
+        <button onclick="execCmd('formatBlock','blockquote')" title="Цитата">❝ Цитата</button>
+      </div>
+      <div class="group">
+        <button onclick="execCmd('undo')" title="Отменить (Ctrl+Z)">↶</button>
+        <button onclick="execCmd('redo')" title="Повторить (Ctrl+Y)">↷</button>
+      </div>
+      <div class="group">
+        <button onclick="saveCurrentBook()" class="btn-primary">💾 Сохранить</button>
+        <button onclick="exportBook()">📤 Экспорт</button>
+      </div>
+    </div>
+    <div class="editor-area">
+      <div class="editor-content" id="editor-content" contenteditable="true">
+        <h1>Начните писать...</h1>
+        <p>Это ваш новый документ. Начните писать здесь.</p>
+      </div>
+    </div>
+    <div class="editor-status">
+      <span id="editor-word-count">0 слов</span>
+      <span id="editor-save-status">Автосохранение включено</span>
+    </div>
+  </div>
+</div>
+
+<!-- Comments Panel -->
+<div class="comments-panel" id="comments-panel">
+  <div class="comments-header">
+    <h3>💬 Комментарии</h3>
+    <button onclick="toggleComments()" style="padding:4px 8px">✕</button>
+  </div>
+  <div class="comments-list" id="comments-list">
+    <div class="empty-state" style="padding:40px 20px">
+      <p>Комментарии появятся здесь</p>
+      <p style="font-size:.85em;margin-top:8px">Настройте GitHub для синхронизации</p>
+    </div>
+  </div>
+  <div class="comment-form">
+    <textarea id="comment-input" placeholder="Напишите комментарий..."></textarea>
+    <button class="btn-primary" onclick="postComment()" style="width:100%">Отправить</button>
+  </div>
+</div>
+
+<!-- TTS Player -->
+<div class="tts-player hidden" id="tts-player">
+  <button onclick="ttsToggle()">▶️</button>
+  <button onclick="ttsStop()">⏹</button>
+  <div class="info" id="tts-info">Озвучка</div>
+  <select id="tts-voice" onchange="ttsChangeVoice()"></select>
+  <input type="range" id="tts-rate" min="0.5" max="2" step="0.1" value="1" onchange="ttsChangeRate()">
+</div>
+
+<!-- Settings Modal -->
+<div class="modal hidden" id="settings-modal">
+  <div class="modal-content">
+    <h2>⚙️ Настройки</h2>
+    <label>
+      <span>GitHub Token</span>
+      <input type="password" id="github-token" placeholder="ghp_...">
+      <small style="color:var(--muted);display:block;margin-top:4px">Создайте токен в Settings → Developer settings → Personal access tokens</small>
+    </label>
+    <label>
+      <span>Имя пользователя GitHub</span>
+      <input type="text" id="github-username" placeholder="username">
+    </label>
+    <label>
+      <span>Репозиторий для хранения книг</span>
+      <input type="text" id="github-repo" placeholder="my-books">
+    </label>
+    <div class="actions">
+      <button onclick="closeSettings()">Отмена</button>
+      <button class="btn-primary" onclick="saveSettings()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// State
+const state = {
+  currentView: 'library',
+  currentBook: null,
+  books: [],
+  settings: {
+    theme: 'light',
+    github: { token: '', username: '', repo: '' }
+  },
+  tts: { speaking: false, utterance: null, rate: 1, voice: null }
+};
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  applyTheme();
+  setupNavigation();
+  setupEditor();
+  loadBooks();
+  initTTS();
+});
+
+// Navigation
+function setupNavigation() {
+  document.querySelectorAll('.main-nav .tab').forEach(tab => {
+    tab.addEventListener('click', () => switchView(tab.dataset.view));
+  });
+}
+
+function switchView(view) {
+  state.currentView = view;
+  document.querySelectorAll('.main-nav .tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  document.getElementById(`${view}-view`).classList.remove('hidden');
+  saveState();
+}
+
+// Theme
+function toggleTheme() {
+  state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  saveState();
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', state.settings.theme);
+}
+
+// Books management
+function loadBooks() {
+  const books = JSON.parse(localStorage.getItem('hogwarts-books') || '[]');
+  state.books = books;
+  renderBooks();
+}
+
+function renderBooks() {
+  const grid = document.getElementById('books-grid');
+  if (state.books.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">📚</div><h3>Библиотека пуста</h3><p>Импортируйте книгу или создайте новую</p></div>';
+    return;
+  }
+  grid.innerHTML = state.books.map((book, i) => `
+    <div class="book-card" onclick="openBook(${i})">
+      <h3>${escapeHtml(book.title)}</h3>
+      <div class="meta">${book.chapters || 1} глав · ${wordCount(book.content)} слов</div>
+      <div class="desc">${escapeHtml(book.description || 'Без описания')}</div>
+      <div class="actions">
+        <button onclick="event.stopPropagation();openBook(${i})">Читать</button>
+        <button onclick="event.stopPropagation();editBook(${i})">Редактировать</button>
+        <button onclick="event.stopPropagation();deleteBook(${i})">Удалить</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function importBook() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.html,.txt,.md';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const content = await file.text();
+    const book = {
+      id: Date.now(),
+      title: file.name.replace(/\.[^.]+$/, ''),
+      content: content,
+      description: 'Импортированная книга',
+      chapters: (content.match(/<h2/gi) || []).length || 1,
+      created: new Date().toISOString()
+    };
+    state.books.push(book);
+    saveBooks();
+    renderBooks();
+  };
+  input.click();
+}
+
+function createNewBook() {
+  const book = {
+    id: Date.now(),
+    title: 'Новая книга',
+    content: '<h1>Новая книга</h1><p>Начните писать...</p>',
+    description: '',
+    chapters: 1,
+    created: new Date().toISOString()
+  };
+  state.books.push(book);
+  saveBooks();
+  editBook(state.books.length - 1);
+}
+
+function openBook(index) {
+  state.currentBook = state.books[index];
+  document.getElementById('reader-title').textContent = state.currentBook.title;
+  document.getElementById('reader-meta').textContent = `${state.currentBook.chapters || 1} глав · ${wordCount(state.currentBook.content)} слов`;
+  document.getElementById('reader-content').innerHTML = state.currentBook.content;
+  switchView('reader');
+}
+
+function editBook(index) {
+  state.currentBook = state.books[index];
+  document.getElementById('editor-content').innerHTML = state.currentBook.content;
+  updateWordCount();
+  switchView('editor');
+}
+
+function deleteBook(index) {
+  if (!confirm('Удалить эту книгу?')) return;
+  state.books.splice(index, 1);
+  saveBooks();
+  renderBooks();
+}
+
+function saveBooks() {
+  localStorage.setItem('hogwarts-books', JSON.stringify(state.books));
+}
+
+function saveCurrentBook() {
+  if (!state.currentBook) return;
+  state.currentBook.content = document.getElementById('editor-content').innerHTML;
+  state.currentBook.chapters = (state.currentBook.content.match(/<h2/gi) || []).length || 1;
+  saveBooks();
+  document.getElementById('editor-save-status').textContent = 'Сохранено ✓';
+  setTimeout(() => {
+    document.getElementById('editor-save-status').textContent = 'Автосохранение включено';
+  }, 2000);
+}
+
+function exportBook() {
+  if (!state.currentBook) return;
+  const blob = new Blob([state.currentBook.content], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${state.currentBook.title}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Editor
+function setupEditor() {
+  const editor = document.getElementById('editor-content');
+  editor.addEventListener('input', () => {
+    updateWordCount();
+    autoSave();
+  });
+  
+  // Keyboard shortcuts
+  editor.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 's') { e.preventDefault(); saveCurrentBook(); }
+    }
+  });
+}
+
+function execCmd(cmd, value = null) {
+  document.execCommand(cmd, false, value);
+  document.getElementById('editor-content').focus();
+}
+
+function updateWordCount() {
+  const text = document.getElementById('editor-content').innerText;
+  const count = wordCount(text);
+  document.getElementById('editor-word-count').textContent = `${count} слов`;
+}
+
+function wordCount(text) {
+  return text.trim().split(/\s+/).filter(w => w.length > 0).length;
+}
+
+let autoSaveTimer;
+function autoSave() {
+  clearTimeout(autoSaveTimer);
+  document.getElementById('editor-save-status').textContent = 'Сохранение...';
+  autoSaveTimer = setTimeout(() => {
+    if (state.currentBook) {
+      state.currentBook.content = document.getElementById('editor-content').innerHTML;
+      saveBooks();
+      document.getElementById('editor-save-status').textContent = 'Автосохранение включено';
+    }
+  }, 1000);
+}
+
+// Reader navigation
+function readerPrevChapter() {
+  // TODO: implement chapter navigation
+  window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+}
+
+function readerNextChapter() {
+  window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+}
+
+function readerGoToTOC() {
+  // TODO: show TOC modal
+  alert('Оглавление будет доступно в следующей версии');
+}
+
+// TTS
+function initTTS() {
+  if (!('speechSynthesis' in window)) return;
+  
+  const loadVoices = () => {
+    const voices = speechSynthesis.getVoices();
+    const ruVoices = voices.filter(v => v.lang.startsWith('ru'));
+    const select = document.getElementById('tts-voice');
+    select.innerHTML = ruVoices.map((v, i) => `<option value="${i}">${v.name}</option>`).join('');
+  };
+  
+  speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+}
+
+function toggleTTS() {
+  const player = document.getElementById('tts-player');
+  if (player.classList.contains('hidden')) {
+    player.classList.remove('hidden');
+    ttsStart();
+  } else {
+    player.classList.add('hidden');
+    ttsStop();
+  }
+}
+
+function ttsStart() {
+  if (!('speechSynthesis' in window)) return;
+  const text = document.getElementById('reader-content').innerText;
+  state.tts.utterance = new SpeechSynthesisUtterance(text);
+  state.tts.utterance.rate = state.tts.rate;
+  state.tts.utterance.onend = () => { state.tts.speaking = false; updateTTSButton(); };
+  speechSynthesis.speak(state.tts.utterance);
+  state.tts.speaking = true;
+  updateTTSButton();
+}
+
+function ttsToggle() {
+  if (state.tts.speaking) {
+    speechSynthesis.pause();
+    state.tts.speaking = false;
+  } else {
+    speechSynthesis.resume();
+    state.tts.speaking = true;
+  }
+  updateTTSButton();
+}
+
+function ttsStop() {
+  speechSynthesis.cancel();
+  state.tts.speaking = false;
+  updateTTSButton();
+}
+
+function updateTTSButton() {
+  const btn = document.querySelector('#tts-player button');
+  btn.textContent = state.tts.speaking ? '⏸' : '▶️';
+}
+
+function ttsChangeVoice() {
+  // TODO: implement voice change
+}
+
+function ttsChangeRate() {
+  state.tts.rate = parseFloat(document.getElementById('tts-rate').value);
+  if (state.tts.utterance) state.tts.utterance.rate = state.tts.rate;
+}
+
+// Comments
+function toggleComments() {
+  document.getElementById('comments-panel').classList.toggle('open');
+}
+
+function postComment() {
+  const input = document.getElementById('comment-input');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  // TODO: integrate with GitHub Issues
+  const comments = JSON.parse(localStorage.getItem('hogwarts-comments') || '[]');
+  comments.push({
+    id: Date.now(),
+    text: text,
+    book: state.currentBook?.title || 'Unknown',
+    date: new Date().toISOString(),
+    author: 'Вы'
+  });
+  localStorage.setItem('hogwarts-comments', JSON.stringify(comments));
+  input.value = '';
+  renderComments();
+}
+
+function renderComments() {
+  const comments = JSON.parse(localStorage.getItem('hogwarts-comments') || '[]');
+  const list = document.getElementById('comments-list');
+  if (comments.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:40px 20px"><p>Комментарии появятся здесь</p></div>';
+    return;
+  }
+  list.innerHTML = comments.map(c => `
+    <div class="comment">
+      <div class="meta">
+        <span>${escapeHtml(c.author)}</span>
+        <span>${new Date(c.date).toLocaleDateString('ru')}</span>
+      </div>
+      <div class="text">${escapeHtml(c.text)}</div>
+    </div>
+  `).join('');
+}
+
+// GitHub integration
+function openSettings() {
+  document.getElementById('github-token').value = state.settings.github.token || '';
+  document.getElementById('github-username').value = state.settings.github.username || '';
+  document.getElementById('github-repo').value = state.settings.github.repo || '';
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.add('hidden');
+}
+
+function saveSettings() {
+  state.settings.github.token = document.getElementById('github-token').value;
+  state.settings.github.username = document.getElementById('github-username').value;
+  state.settings.github.repo = document.getElementById('github-repo').value;
+  saveState();
+  closeSettings();
+  alert('Настройки сохранены');
+}
+
+async function syncWithGitHub() {
+  if (!state.settings.github.token || !state.settings.github.username || !state.settings.github.repo) {
+    alert('Сначала настройте GitHub в настройках');
+    openSettings();
+    return;
+  }
+  
+  // TODO: implement GitHub sync
+  alert('Синхронизация с GitHub будет доступна в следующей версии');
+}
+
+// State persistence
+function saveState() {
+  localStorage.setItem('hogwarts-state', JSON.stringify(state));
+}
+
+function loadState() {
+  const saved = localStorage.getItem('hogwarts-state');
+  if (saved) {
+    const loaded = JSON.parse(saved);
+    Object.assign(state, loaded);
+  }
+}
+
+// Utils
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+}
+</script>
+</body>
+</html>
